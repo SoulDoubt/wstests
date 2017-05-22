@@ -15,6 +15,8 @@ public:
     SQLDatabase();
     virtual ~SQLDatabase();
     JsonBox::Array ExecuteSelectQuery(const std::string& sql);
+    int ExecuteNonQuery(const std::string& sql);
+    int ExecuteRawStatement(const std::string& sql);
 
     bool IsOpen(){
         return m_isOpen;
@@ -27,7 +29,7 @@ public:
 private:
     sqlite3* m_db = nullptr;
     bool m_isOpen;
-    std::string m_errorString;
+    std::string m_errorString = std::string();
 };
 }
 

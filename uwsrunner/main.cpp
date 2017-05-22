@@ -13,15 +13,6 @@
 
 #define DEBUG_SQLITE_DB_PATH "/home/al/test.db"
 
-static int db_callback(void* NotUsed, int argc, char** argv, char** azColName)
-{
-    int i;
-    for(i = 0; i < argc; i++) {
-        printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
-    }
-    printf("\n");
-    return 0;
-}
 
 bool DatabaseExists(const char* path)
 {
@@ -36,15 +27,7 @@ bool DatabaseExists(const char* path)
 bool CreateDatabase(const char* path)
 {
 
-    sqlite3* db;
-    char* errorMessage = nullptr;
-    int rc = sqlite3_open(path, &db);
-    if(rc) {
-        std::cout << "Damn, database connection failed" << std::endl;
-        return false;
-    } else {
-        std::cout << "Database Connection successful." << std::endl;
-    }
+    Accutron::SQLDatabase db;
 
     const char* sql = "CREATE TABLE Users("
                       "ID             INT         PRIMARY KEY     NOT NULL,"
@@ -52,11 +35,8 @@ bool CreateDatabase(const char* path)
                       "Permissions    VARCHAR(8)                  NOT NULL,"
                       "FloatVal       FLOAT                       NOT NULL)";
 
-    rc = sqlite3_exec(db, sql, db_callback, nullptr, &errorMessage);
-    if(rc != SQLITE_OK) {
-        fprintf(stdout, "SQL error: %s\n", errorMessage);
-        sqlite3_free(errorMessage);
-        return false;
+    if (db.IsOpen()){
+        db.ExecuteNonQuery(sql);
     }
 
     std::cout << "Users Table Created..." << std::endl;
@@ -74,13 +54,9 @@ bool CreateDatabase(const char* path)
                        "ID, UserName, Permissions, FloatVal) VALUES ("
                        "4, 'Doug', 'r--', 564.8674);";
 
-    rc = sqlite3_exec(db, isql, db_callback, nullptr, &errorMessage);
-    if(rc != SQLITE_OK) {
-        fprintf(stdout, "SQL error: %s\n", errorMessage);
-        sqlite3_free(errorMessage);
-        return false;
+    if (db.IsOpen()){
+        db.ExecuteRawStatement(isql);
     }
-    sqlite3_close(db);
     return true;
 }
 
@@ -129,6 +105,7 @@ int main(int argc, char** argv)
                 auto users = db.ExecuteSelectQuery("SELECT * FROM Users");
                 std::stringstream ss;
                 ss << users;
+                std::cout << users;
                 std::string resultstring = ss.str();
                 ws->send(resultstring.c_str(), resultstring.size(), opCode);
             } else{
