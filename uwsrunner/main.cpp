@@ -11,7 +11,6 @@
 
 #include <SQL.h>
 
-
 #define DEBUG_SQLITE_DB_PATH "/home/al/test.db"
 
 static int db_callback(void* NotUsed, int argc, char** argv, char** azColName)
@@ -50,7 +49,8 @@ bool CreateDatabase(const char* path)
     const char* sql = "CREATE TABLE Users("
                       "ID             INT         PRIMARY KEY     NOT NULL,"
                       "UserName       VARCHAR(64)                 NOT NULL,"
-                      "Permissions    VARCHAR(8)                  NOT NULL)";
+                      "Permissions    VARCHAR(8)                  NOT NULL,"
+                      "FloatVal       FLOAT                       NOT NULL)";
 
     rc = sqlite3_exec(db, sql, db_callback, nullptr, &errorMessage);
     if(rc != SQLITE_OK) {
@@ -62,17 +62,17 @@ bool CreateDatabase(const char* path)
     std::cout << "Users Table Created..." << std::endl;
 
     const char* isql = "INSERT INTO Users ("
-                       "ID, UserName, Permissions) VALUES ("
-                       "1, 'Allan', 'rwx');"
+                       "ID, UserName, Permissions, FloatVal) VALUES ("
+                       "1, 'Allan', 'rwx', 3.76575);"
                        "INSERT INTO Users ("
-                       "ID, UserName, Permissions) VALUES ("
-                       "2, 'Mike', 'rwx');"
+                       "ID, UserName, Permissions, FloatVal) VALUES ("
+                       "2, 'Mike', 'rwx', 4.5498);"
                        "INSERT INTO Users ("
-                       "ID, UserName, Permissions) VALUES ("
-                       "3, 'Richard', 'r-x');"
+                       "ID, UserName, Permissions, FloatVal) VALUES ("
+                       "3, 'Richard', 'r-x', 764.78263);"
                        "INSERT INTO Users ("
-                       "ID, UserName, Permissions) VALUES ("
-                       "4, 'Doug', 'r--');";
+                       "ID, UserName, Permissions, FloatVal) VALUES ("
+                       "4, 'Doug', 'r--', 564.8674);";
 
     rc = sqlite3_exec(db, isql, db_callback, nullptr, &errorMessage);
     if(rc != SQLITE_OK) {
@@ -125,15 +125,16 @@ int main(int argc, char** argv)
 
             // we are in a thread and must create our own DB whenever needed...
             Accutron::SQLDatabase db;
-            auto users = db.ExecuteQuery("SELECT * FROM Users");
-            
-
-            std::cout << users << std::endl;
-            std::stringstream ss;
-            ss << users;
-            std::string resultstring = ss.str();
-            ws->send(resultstring.c_str(), resultstring.size(), opCode);
-
+            if(db.IsOpen()) {
+                auto users = db.ExecuteSelectQuery("SELECT * FROM Users");
+                std::stringstream ss;
+                ss << users;
+                std::string resultstring = ss.str();
+                ws->send(resultstring.c_str(), resultstring.size(), opCode);
+            } else{
+                std::string err = db.GetError();
+                ws->send(err.c_str(), err.size(), opCode);
+            }
         });
 
         // This makes use of the SO_REUSEPORT of the Linux kernel

@@ -12,6 +12,7 @@ SQLDatabase::SQLDatabase()
         m_isOpen = false;
         m_errorString = error;
     }
+    m_isOpen = true;
 }
 
 SQLDatabase::~SQLDatabase()
@@ -20,11 +21,10 @@ SQLDatabase::~SQLDatabase()
         sqlite3_close(m_db);
 }
 
-JsonBox::Array SQLDatabase::ExecuteQuery(const std::string& sql)
+JsonBox::Array SQLDatabase::ExecuteSelectQuery(const std::string& sql)
 {
     sqlite3_stmt* stmt;
-    const char* sqlc = sql.c_str();
-    //char* dbError = nullptr;
+    const char* sqlc = sql.c_str();    
     sqlite3_prepare_v2(m_db, sqlc, -1, &stmt, nullptr);
     JsonBox::Array retval;
     int rc;
@@ -34,13 +34,15 @@ JsonBox::Array SQLDatabase::ExecuteQuery(const std::string& sql)
         for (int i = 0; i < colCount; ++i){ 
             auto colName = std::string(sqlite3_column_name(stmt, i));
             auto typ = std::string(sqlite3_column_decltype(stmt, i));            
-            if (typ == "INT"){
-                // read and add an int
+            if (typ == "INT" || typ == "INTEGER" || typ == "TINYINT"){                
                 o[colName] = sqlite3_column_int(stmt, i);
-            } else if (typ.find("VARCHAR") == 0){
-                // read and add a string
+            } else if (typ.find("VARCHAR") == 0 || typ.find("NVARCHAR") == 0){                
                 o[colName] = sqlite3_column_text(stmt, i);
-            }                     
+            } else if (typ == "TEXT"){
+                o[colName] = sqlite3_column_text(stmt, i);
+            } else if (typ == "FLOAT" || typ == "REAL" || typ == "DOUBLE"){
+                o[colName] = sqlite3_column_double(stmt, i);
+            }
         }
         retval.push_back(o);
     }

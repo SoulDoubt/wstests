@@ -14,7 +14,7 @@ class SQLDatabase
 public:
     SQLDatabase();
     virtual ~SQLDatabase();
-    JsonBox::Array ExecuteQuery(const std::string& sql);
+    JsonBox::Array ExecuteSelectQuery(const std::string& sql);
 
     bool IsOpen(){
         return m_isOpen;
