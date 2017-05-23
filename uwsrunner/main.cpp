@@ -102,13 +102,16 @@ int main(int argc, char** argv)
             // we are in a thread and must create our own DB whenever needed...
             Accutron::SQLDatabase db;
             if(db.IsOpen()) {
-                auto users = db.ExecuteSelectQuery("SELECT * FROM Users");
+                std::vector<Accutron::SQLParameter> params;
+                Accutron::SQLParameter p("Rich%");                
+                params.push_back(p);
+                auto users = db.ExecuteSelectQuery("SELECT * FROM Users WHERE UserName LIKE ?", params);
                 std::stringstream ss;
                 ss << users;
                 std::cout << users;
                 std::string resultstring = ss.str();
                 ws->send(resultstring.c_str(), resultstring.size(), opCode);
-            } else{
+            } else {
                 std::string err = db.GetError();
                 ws->send(err.c_str(), err.size(), opCode);
             }
